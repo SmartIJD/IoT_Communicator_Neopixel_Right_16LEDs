@@ -1,7 +1,10 @@
 function ShowingCountDown () {
     if (ThisLED > 0) {
-        ThisLED += -1
-        ring.setPixelColor(ThisLED, neopixel.rgb(0, 0, 0))
+        if (MountOfLED > 16) {
+            ring.setPixelColor(ThisLED, neopixel.rgb(0, 0, 0))
+        } else {
+            ring.setPixelColor(MountOfLED - ThisLED, neopixel.rgb(0, 0, 0))
+        }
         ring.show()
         for (let index = 0; index < 1; index++) {
             if (ThisLED < 10) {
@@ -11,6 +14,7 @@ function ShowingCountDown () {
             }
             basic.pause(100)
         }
+        ThisLED += -1
     } else {
         ThisLED = 0
         Mode = ""
@@ -51,7 +55,7 @@ input.onButtonPressed(Button.A, function () {
 })
 function FadingOutAll () {
     tThisBrightness = Brightness
-    for (let index = 0; index < 6; index++) {
+    while (tThisBrightness > 0) {
         tDebug += 1
         if (tThisBrightness > 0) {
             tThisBrightness += -10
@@ -89,6 +93,67 @@ input.onButtonPressed(Button.AB, function () {
     radio.sendValue("GID", GroupNum)
     radio.sendValue("ModeID", 0)
 })
+function WakingUpWelcome () {
+    basic.showLeds(`
+        . . . . .
+        # # # . .
+        . . . . .
+        . . . . .
+        . . . . .
+        `)
+    basic.pause(50)
+    basic.showLeds(`
+        . . . . .
+        # # # # #
+        # . # . .
+        # . . . .
+        . . . . .
+        `)
+    basic.pause(50)
+    basic.showLeds(`
+        . . . . .
+        # # # # #
+        # # # # #
+        # . . . .
+        . . . . .
+        `)
+    basic.pause(50)
+    tThisBrightness = 40
+    while (tThisBrightness < Brightness - 0) {
+        for (let index = 0; index <= 2; index++) {
+            ring.setPixelColor(index + 2, neopixel.colors(NeoPixelColors.Blue))
+            ring.setBrightness(tThisBrightness)
+            ring.show()
+            ring.setPixelColor(index + 11, neopixel.colors(NeoPixelColors.Blue))
+            ring.setBrightness(tThisBrightness)
+            ring.show()
+        }
+        basic.showLeds(`
+            . . . . .
+            # # # # #
+            # # # # #
+            # . . . .
+            . . . . .
+            `)
+        basic.showLeds(`
+            . . . . .
+            # # # # #
+            # # # # #
+            # # # . .
+            . . . . .
+            `)
+        basic.showLeds(`
+            . . . . .
+            # # # # #
+            # # # # #
+            # # # # #
+            . . . . .
+            `)
+        tThisBrightness += 40
+    }
+    basic.pause(50)
+    basic.showIcon(IconNames.Happy)
+}
 input.onButtonPressed(Button.B, function () {
     radio.sendValue("GID", GroupNum)
     radio.sendValue("ModeID", 1)
@@ -98,7 +163,11 @@ input.onGesture(Gesture.Shake, function () {
     radio.sendValue("ModeID", 3)
 })
 function RefillingTheRing () {
-    ring.setPixelColor(ThisLED, neopixel.colors(NeoPixelColors.Blue))
+    if (MountOfLED > 16) {
+        ring.setPixelColor(ThisLED, neopixel.colors(NeoPixelColors.Blue))
+    } else {
+        ring.setPixelColor(MountOfLED - ThisLED, neopixel.colors(NeoPixelColors.Blue))
+    }
     ring.show()
     basic.pause(200)
     ThisLED += 1
@@ -122,12 +191,25 @@ radio.onReceivedValue(function (name, value) {
         BreathingLED = 0
         if (value == 0) {
             Mode = "WakeUpAll"
-            basic.showNumber(value)
-            basic.showString("W")
         }
         if (value == 12) {
             Mode = "FadingOut"
-            basic.showNumber(value)
+            basic.showLeds(`
+                . . . . .
+                . # . # .
+                . . . . .
+                # # # # #
+                . . . . .
+                `)
+            basic.pause(500)
+            basic.showLeds(`
+                . . . . .
+                . # . # .
+                . . . . .
+                . # # # .
+                . . . . .
+                `)
+            basic.pause(200)
         }
         if (value == 1) {
             Mode = "AllOn"
@@ -138,6 +220,7 @@ radio.onReceivedValue(function (name, value) {
                 Mode = "CountDown"
             }
         }
+        // "Intervention" Mode 
         if (value == 3) {
             if (ThisLED < MountOfLED && ThisLED > 0) {
                 basic.showNumber(value)
@@ -187,7 +270,7 @@ function breathingLED_Point () {
 }
 function TurningAllOn () {
     tThisBrightness = 10
-    for (let index = 0; index < 4; index++) {
+    while (tThisBrightness < Brightness) {
         for (let index = 0; index <= MountOfLED - 1; index++) {
             ring.setPixelColor(index, neopixel.colors(NeoPixelColors.Blue))
             ring.setBrightness(tThisBrightness)
@@ -198,7 +281,7 @@ function TurningAllOn () {
     }
     basic.pause(50)
     for (let index = 0; index < 2; index++) {
-        basic.showIcon(IconNames.Confused)
+        basic.showIcon(IconNames.Surprised)
         basic.pause(100)
         basic.clearScreen()
         basic.showIcon(IconNames.Happy)
@@ -256,7 +339,7 @@ radio.setGroup(1)
 GroupNum = 1
 MountOfLED = 16
 ring = neopixel.create(DigitalPin.P1, MountOfLED, NeoPixelMode.RGB)
-Brightness = 50
+Brightness = 200
 ring.setBrightness(Brightness)
 ThisLED = 0
 // Set the interval for triggering the event automatically
@@ -272,7 +355,7 @@ basic.forever(function () {
         breathingLED_Point()
     }
     if (Mode == "WakeUpAll") {
-        TurningAllOn()
+        WakingUpWelcome()
         basic.pause(2000)
         pThisRunTime = input.runningTime()
         ThisLED = MountOfLED
@@ -287,14 +370,17 @@ basic.forever(function () {
     }
     if (Mode == "FadingOut") {
         FadingOutAll()
-        basic.pause(5000)
+        basic.pause(2000)
         Mode = ""
         pThisRunTime = input.runningTime()
         BroadcastingResetMediator()
     }
+    // It should be renamed as "auto-switch-off" mode or condition
+    // It should be renamed as "auto-switch-off"
     if (Mode == "AllOn") {
         TurningAllOn()
         basic.pause(5000)
+        // Would it be better to exclude or include the counting down?
         Mode = "CountDown"
         pThisRunTime = input.runningTime()
         ThisLED = MountOfLED
@@ -313,7 +399,7 @@ basic.forever(function () {
         ShowingCountDown()
     }
     if (Mode == "Reverse") {
-        while (ThisLED < MountOfLED) {
+        while (ThisLED <= MountOfLED) {
             RefillingTheRing()
         }
         basic.showIcon(IconNames.SmallDiamond)
